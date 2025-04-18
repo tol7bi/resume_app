@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: resume_postgres_db
+    restart: always
+    environment:
+      - POSTGRES_USER=tol7bi
+      - POSTGRES_PASSWORD=tol7bi
+      - POSTGRES_DB=resume_postgres_db
+      - TZ=Asia/Almaty
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: redis_resume
+    environment:
+      - REDIS_PASSWORD=tol7bi
+      - REDIS_USER=tol7bi
+      - REDIS_USER_PASSWORD=tol7bi
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redisdata:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    command: >
+      sh -c '
+        redis-server --requirepass tol7bi --appendonly yes
+      '
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_resume
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: tol7bi
+      MONGO_INITDB_ROOT_PASSWORD: tol7bi
+    volumes:
+      - mongo_data:/data/db
+
+
+volumes:
+  pgdata:
+  mongo_data:
